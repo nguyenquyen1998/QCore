@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using QCore.Domain.Events;
+using QCore.Application;
 
 namespace QCore.Application.Common;
 
@@ -38,5 +39,33 @@ public class Dispatcher
         await handler.HandleAsync((dynamic)command, cancellationToken);
     }
 
-    
+    public async Task<T> DispatchAsync<T>(IQuery<T> query, CancellationToken cancellationToken = default)
+    {
+        Type type = typeof(IQueryHandler<,>);
+        Type[] typeArgs = { query.GetType(), typeof(T) };
+        Type handlerType = type.MakeGenericType(typeArgs);
+
+        dynamic handler = _provider.GetService(handlerType);
+        Task<T> result = handler.HandleAsync((dynamic)query, cancellationToken);
+
+        return await result;
+    }
+
+    public async Task DispatchAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default)
+    {
+        foreach (Type handlerType in _eventHandlers)
+        {
+            bool canHandleEvent = handlerType.GetInterfaces()
+                .Any(x => x.IsGenericType
+                    && x.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
+                    && x.GenericTypeArguments[0] == domainEvent.GetType());
+
+            if (canHandleEvent)
+            {
+                dynamic handler = _provider.GetService(handlerType);
+                await handler.HandleAsync((dynamic)domainEvent, cancellationToken);
+            }
+        }
+    }
+
 }
