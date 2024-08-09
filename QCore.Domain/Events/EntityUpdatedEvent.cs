@@ -2,10 +2,10 @@ using QCore.Domain.Entities;
 
 namespace QCore.Domain.Events;
 
-public class EntityDeleteEvent<T> : IDomainEvent where T : Entity<Guid>
+public class EntityUpdatedEvent<T> : IDomainEvent where T : Entity<Guid>
 {
 
-    public EntityDeleteEvent(T entity, DateTime enventDateTime)
+    public EntityUpdatedEvent(T entity, DateTime enventDateTime)
     {
         Entity = entity;
         EventDateTime = enventDateTime;
