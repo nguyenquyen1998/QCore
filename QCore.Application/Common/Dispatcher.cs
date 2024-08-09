@@ -27,4 +27,16 @@ public class Dispatcher
 
         _eventHandlers.AddRange(types);
     }
+
+    public async Task DispatchAsync(ICommand command, CancellationToken cancellationToken = default)
+    {
+        Type type = typeof(ICommandHandler<>);
+        Type[] typeArgs = { command.GetType() };
+        Type handlerType = type.MakeGenericType(typeArgs);
+
+        dynamic handler = _provider.GetService(handlerType);
+        await handler.HandleAsync((dynamic)command, cancellationToken);
+    }
+
+    
 }
